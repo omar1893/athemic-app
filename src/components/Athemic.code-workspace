@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../../TenantEvaluation/tenantev-ai"
+		},
+		{
+			"path": "../../../../../TenantEvaluation/new-tenantev"
+		}
+	],
+	"settings": {}
+}

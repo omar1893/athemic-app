@@ -1,0 +1,35 @@
+$primary: #875EF8;
+$dark: #170033;
+$white: #FFFFFF;
+$light: #F5F5F5;
+$haiti: #282531;
+
+$colors: (
+  'primary': $primary,
+  'dark': $dark,
+  'white': $white,
+  'light': $light,
+  'haiti': $haiti
+);
+
+$border-radius: 200px;
+$max-width: 480px;
+$button-height: 56px;
+$button-padding: 16px;
+$button-gap: 1rem;
+
+$font-family: 'Montserrat', -apple-system, Roboto, Helvetica, sans-serif;
+$font-size-large: 2.8rem;
+$font-size-normal: 1.6rem;
+$line-height-large: 3.4rem;
+$line-height-normal: 1.2;
+$letter-spacing: -0.16px; 
+
+@each $name, $value in $colors {
+  .bg-#{$name} {
+    background-color: #{$value} !important;
+  }
+  .text-#{$name} {
+    color: #{$value} !important;
+  }
+} 
