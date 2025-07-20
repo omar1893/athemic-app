@@ -124,7 +124,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import 'vue3-carousel/dist/carousel.css';
 import comidaBanner from '@/assets/test/comida-banner.svg';
-import productsService from '@/services/products.service';
+import {productsService} from '@/services/products.service';
 import interactionsService from '@/services/interactions.service';
 
 interface Product {
@@ -165,14 +165,17 @@ const promoSlides = [
 const fetchBestSellers = async () => {
   try {
     loading.value = true;
-    const response = await productsService.getBestSellers();
+    console.log(productsService);
     
-    if (response.productos) {
-      bestSellers.value = response.productos.map((product: any) => ({
+    const response = await productsService.getBestSellers();
+    console.log(response.data);
+    
+    if (response.data.productos) {
+      bestSellers.value = response.data.productos.map((product: any) => ({
         id: product.id,
         name: product.nombre,
         price: product.precio,
-        image: product.imagen || '',
+        image: product.menuImage || product.imagen || '',
         store: product.tienda || 'Store'
       }));
     }
@@ -187,12 +190,12 @@ const fetchRecommendations = async () => {
   try {
     const response = await productsService.getAll({ limit: 3 });
     
-    if (response.productos) {
-      recommendations.value = response.productos.map((product: any) => ({
+    if (response.data.productos) {
+      recommendations.value = response.data.productos.map((product: any) => ({
         id: product.id,
         name: product.nombre,
         price: product.precio,
-        image: product.imagen || '',
+        image: product.menuImage || product.imagen || '',
         store: product.tienda || 'Store'
       }));
     }

@@ -2,12 +2,6 @@
   <ion-page>
     <ion-content :fullscreen="true">
       <div class="product-detail-container">
-        <!-- Header -->
-        <div class="header">
-          <q-btn flat round icon="arrow_back" @click="goBack" class="header-btn" />
-          <q-btn flat round icon="shopping_cart" @click="goToCart" class="header-btn" />
-        </div>
-
         <!-- Loading state -->
         <div v-if="loading" class="loading-container">
           <ion-spinner name="crescent"></ion-spinner>
@@ -22,49 +16,68 @@
 
         <!-- Product content -->
         <div v-else-if="product" class="product-content">
+          <!-- Header buttons positioned absolutely over carousel -->
+          <div class="header-buttons">
+            <ABackButton />
+            <q-btn flat round dense icon="shopping_cart" @click="goToCart" class="cart-btn" />
+          </div>
+
           <!-- Product image section -->
           <div class="product-image-section">
-            <div class="product-image-container">
+            <div v-if="product.detailImages && product.detailImages.length > 0" class="product-carousel">
+              <Carousel 
+                :items-to-show="1" 
+                :gap="0" 
+                class="image-carousel"
+                @slide-end="onSlideEnd"
+              >
+                <Slide v-for="(image, index) in product.detailImages" :key="index">
+                  <div class="product-image-container">
+                    <img :src="image" :alt="`${product.nombre} - Image ${index + 1}`" class="product-image" />
+                  </div>
+                </Slide>
+              </Carousel>
+            </div>
+            <div v-else class="product-image-container">
               <div class="product-image-placeholder">
                 <q-icon name="image" size="120px" color="grey-5" />
               </div>
             </div>
             <!-- Image carousel indicators -->
-            <div class="image-indicators">
-              <div class="indicator active"></div>
-              <div class="indicator"></div>
-              <div class="indicator"></div>
+            <div v-if="product.detailImages && product.detailImages.length > 1" class="image-indicators">
+              <div 
+                v-for="(image, index) in product.detailImages" 
+                :key="index"
+                class="indicator"
+                :class="{ active: currentImageIndex === index }"
+              ></div>
             </div>
           </div>
 
           <!-- Product info section -->
           <div class="product-info-section">
             <div class="price-section">
-              <span class="price">${{ product.precio }}</span>
+              <span class="price title-600">${{ product.precio }}</span>
             </div>
             
-            <h1 class="product-name">{{ product.nombre }}</h1>
+            <h1 class="product-name subtitle-bold">{{ product.nombre }}</h1>
             
-            <p class="product-description">
+            <p class="product-description body">
               Pan dulce esponjoso con cobertura de azúcar en verde, blanco y rojo.
-            </p>
-            
-            <p class="product-context">
-              Un ícono del pan mexicano, ideal para acompañar con café.
             </p>
 
             <!-- Seller info -->
-            <div class="seller-info">
+            <!-- <div class="seller-info">
               <div class="seller-icon">
                 <q-icon name="location_on" color="red" size="16px" />
               </div>
               <span class="seller-name">Sweet Roots</span>
-            </div>
+            </div> -->
           </div>
 
           <!-- Most ordered section -->
           <div class="most-ordered-section">
-            <h3 class="section-title">Most ordered</h3>
+            <h3 class="section-title body-bold">Most ordered</h3>
             <div class="products-carousel">
               <div class="product-card" v-for="i in 3" :key="i">
                 <div class="card-image-placeholder">
@@ -118,10 +131,13 @@
 
 <script setup lang="ts">
 import { IonContent, IonPage, IonSpinner } from '@ionic/vue';
+import { Carousel, Slide } from 'vue3-carousel';
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import productsService from '@/services/products.service';
+import 'vue3-carousel/dist/carousel.css';
+import { productsService } from '@/services/products.service';
 import interactionsService from '@/services/interactions.service';
+import ABackButton from '@/components/ABackButton.vue';
 
 interface Product {
   id: string;
@@ -129,6 +145,7 @@ interface Product {
   precio: number;
   isActive: boolean;
   contadorCarrito: number;
+  detailImages?: string[];
 }
 
 const route = useRoute();
@@ -139,6 +156,7 @@ const loading = ref(true);
 const error = ref('');
 const quantity = ref(1);
 const addingToCart = ref(false);
+const currentImageIndex = ref(0);
 
 const productId = route.params.id as string;
 
@@ -147,33 +165,27 @@ const fetchProduct = async () => {
     loading.value = true;
     error.value = '';
     
-    // Fetch all products and find the specific one by ID
-    const response = await productsService.getAll();
+    // Fetch product by ID using the new service method
+    const response = await productsService.getById(productId);
     
-    if (response.productos && response.productos.length > 0) {
-      const foundProduct = response.productos.find((p: any) => p.id === productId);
+    if (response.data) {
+      product.value = response.data;
+      console.log('Product loaded successfully:', product.value);
       
-      if (foundProduct) {
-        product.value = foundProduct;
-        console.log('Product loaded successfully:', product.value);
-        
-        // Track vista interaction
-        try {
-          console.log('About to track vista interaction...');
-          await interactionsService.addInteraction({
-            productId: productId,
-            tipo: 'vista'
-          });
-          console.log('Vista interaction tracked successfully');
-        } catch (interactionError) {
-          console.error('Error tracking vista interaction:', interactionError);
-        }
-        
-      } else {
-        error.value = 'Product not found';
+      // Track vista interaction
+      try {
+        console.log('About to track vista interaction...');
+        await interactionsService.addInteraction({
+          productId: productId,
+          tipo: 'vista'
+        });
+        console.log('Vista interaction tracked successfully');
+      } catch (interactionError) {
+        console.error('Error tracking vista interaction:', interactionError);
       }
+      
     } else {
-      error.value = 'No products available';
+      error.value = 'Product not found';
     }
   } catch (err) {
     console.error('Error fetching product:', err);
@@ -224,13 +236,13 @@ const addToCart = async () => {
   }
 };
 
-const goBack = () => {
-  router.back();
-};
-
 const goToCart = () => {
   // Navigate to cart view (you can implement this later)
   console.log('Navigate to cart');
+};
+
+const onSlideEnd = (index: number) => {
+  currentImageIndex.value = index;
 };
 
 onMounted(() => {
@@ -284,14 +296,51 @@ onMounted(() => {
 
 .product-content {
   background: white;
-  margin: 0 1.6rem;
   border-radius: 1.2rem;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.header-buttons {
+  position: absolute;
+  top: 2rem;
+  left: 1.6rem;
+  right: 1.6rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+  
+  .a-back-btn,
+  .cart-btn {
+    pointer-events: auto;
+  }
+}
+
+.cart-btn {
+  background: #17003314;
+  color: #170033;
+  box-shadow: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 100%;
 }
 
 .product-image-section {
   position: relative;
+  
+  .product-carousel {
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+  }
+  
+  .image-carousel {
+    width: 100%;
+    height: 100%;
+  }
   
   .product-image-container {
     width: 100%;
@@ -300,6 +349,20 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     background: #f5f5f5;
+    
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .product-image-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
   }
   
   .image-indicators {
@@ -313,6 +376,7 @@ onMounted(() => {
       height: 8px;
       border-radius: 50%;
       background: #d1d5db;
+      transition: background-color 0.3s ease;
       
       &.active {
         background: #6b7280;

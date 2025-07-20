@@ -1,32 +1,12 @@
-import axios from 'axios';
-import config from '@/config';
-import { useAuthStore } from '@/stores/auth.store';
+import axios from 'axios'
 
-const productsService = {
-  async getAll(params?: Record<string, any>) {
-    const authStore = useAuthStore();
-    const headers = authStore.accessToken ? {
-      Authorization: `Bearer ${authStore.accessToken}`
-    } : {};
-    
-    const response = await axios.get(`${config.API_PRODUCTS}/productos`, { 
-      params,
-      headers
-    });
-    return response.data;
-  },
+const API_URL = 'https://mercapp-seller-production.up.railway.app/api'
 
-  async getBestSellers() {
-    const authStore = useAuthStore();
-    const headers = authStore.accessToken ? {
-      Authorization: `Bearer ${authStore.accessToken}`
-    } : {};
-    
-    const response = await axios.get(`${config.API_PRODUCTS}/productos/mas-vendidos`, {
-      headers
-    });
-    return response.data;
-  }
-};
-
-export default productsService; 
+export const productsService = {
+  create: (data: any, config?: any) => axios.post(`${API_URL}/productos`, data, config),
+  getAll: (params?: any, headers?: any) => axios.get(`${API_URL}/productos`, { params, headers }),
+  getById: (id: string) => axios.get(`${API_URL}/productos/${id}`),
+  getBestSellers: () => axios.get(`${API_URL}/productos/mas-vendidos`),
+  addInteraction: (data: any) => axios.post(`${API_URL}/productos/interaction`, data),
+  incrementCart: (id: string) => axios.post(`${API_URL}/productos/${id}/carrito`),
+} 
